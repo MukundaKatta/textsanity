@@ -1,0 +1,27 @@
+[workspace]
+members = ["crates/textsanity-core", "crates/textsanity-py"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Mukunda Katta"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.75"
+repository = "https://github.com/MukundaKatta/textsanity"
+homepage = "https://github.com/MukundaKatta/textsanity"
+documentation = "https://docs.rs/textsanity-core"
+readme = "README.md"
+keywords = ["unicode", "text", "cleanup", "llm", "preprocessing"]
+categories = ["text-processing"]
+
+[workspace.dependencies]
+# Unicode NFKC normalization. Tiny, well-maintained crate.
+unicode-normalization = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "2.0"
+rayon = "1.10"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

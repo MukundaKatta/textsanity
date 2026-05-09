@@ -1,0 +1,23 @@
+[package]
+name = "textsanity-core"
+description = "Pure-Rust core for textsanity: unicode/whitespace/encoding cleanup."
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+unicode-normalization = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+rayon = { workspace = true }
+
+[lib]
+path = "src/lib.rs"

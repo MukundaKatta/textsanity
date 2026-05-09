@@ -1,0 +1,20 @@
+[package]
+name = "textsanity-py"
+description = "PyO3 bindings for textsanity-core."
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+publish = false
+
+[lib]
+name = "textsanity_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+textsanity-core = { path = "../textsanity-core", version = "0.1.0" }
+pyo3 = { version = "0.23", features = ["abi3-py310", "extension-module"] }
