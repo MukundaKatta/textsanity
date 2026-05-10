@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "textsanity"
-version = "0.1.0"
+version = "0.1.1"
 description = "Fast unicode/whitespace/encoding cleanup before LLM input."
 authors = [{ name = "Mukunda Katta" }]
 license = "MIT OR Apache-2.0"

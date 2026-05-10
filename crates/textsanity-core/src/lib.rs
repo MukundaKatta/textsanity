@@ -63,6 +63,64 @@ impl Default for Options {
     }
 }
 
+impl Options {
+    /// Strict preset: every cleanup operation enabled. Use when feeding
+    /// untrusted text into a downstream that's sensitive to unicode tricks.
+    pub fn strict() -> Self {
+        Self {
+            nfkc: true,
+            strip_zero_width: true,
+            strip_control: true,
+            collapse_whitespace: true,
+            trim: true,
+            ascii_punctuation: true,
+            strip_emoji: true,
+            ascii_only: true,
+        }
+    }
+}
+
+/// Normalize line endings to `\n`. Converts both `\r\n` (CRLF) and lone
+/// `\r` (CR) to `\n`. Idempotent. Cheap to apply before or after the main
+/// `sanitize` pipeline.
+pub fn normalize_newlines(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let b = bytes[i];
+        if b == b'\r' {
+            out.push('\n');
+            // Skip a following \n so CRLF collapses to one \n.
+            if i + 1 < bytes.len() && bytes[i + 1] == b'\n' {
+                i += 1;
+            }
+        } else {
+            // Reconstruct the char from the byte (ASCII-safe; fall through to
+            // re-decoding the rest as UTF-8 if a multi-byte sequence starts).
+            if b < 0x80 {
+                out.push(b as char);
+            } else {
+                // Multi-byte UTF-8: take a slice and let str handle it.
+                let end = next_char_boundary(bytes, i);
+                // Safe because text is &str and the indices are char boundaries.
+                out.push_str(&text[i..end]);
+                i = end - 1;
+            }
+        }
+        i += 1;
+    }
+    out
+}
+
+fn next_char_boundary(bytes: &[u8], start: usize) -> usize {
+    let mut end = start + 1;
+    while end < bytes.len() && (bytes[end] & 0xC0) == 0x80 {
+        end += 1;
+    }
+    end
+}
+
 /// Run the cleanup pipeline against `text` with the given options.
 pub fn sanitize(text: &str, opts: &Options) -> String {
     // 1. NFKC normalize. This is the only step that needs a separate pass.
@@ -226,6 +284,48 @@ mod tests {
 
     fn defaults() -> Options {
         Options::default()
+    }
+
+    #[test]
+    fn strict_preset_enables_everything() {
+        let s = Options::strict();
+        assert!(s.nfkc);
+        assert!(s.strip_zero_width);
+        assert!(s.strip_control);
+        assert!(s.collapse_whitespace);
+        assert!(s.trim);
+        assert!(s.ascii_punctuation);
+        assert!(s.strip_emoji);
+        assert!(s.ascii_only);
+    }
+
+    #[test]
+    fn normalize_newlines_crlf_to_lf() {
+        assert_eq!(normalize_newlines("a\r\nb\r\nc"), "a\nb\nc");
+    }
+
+    #[test]
+    fn normalize_newlines_lone_cr_to_lf() {
+        assert_eq!(normalize_newlines("a\rb\rc"), "a\nb\nc");
+    }
+
+    #[test]
+    fn normalize_newlines_idempotent() {
+        let once = normalize_newlines("a\r\nb\r\nc");
+        let twice = normalize_newlines(&once);
+        assert_eq!(once, twice);
+    }
+
+    #[test]
+    fn normalize_newlines_preserves_unicode() {
+        assert_eq!(normalize_newlines("hi 世界\r\nbye 🌍"), "hi 世界\nbye 🌍");
+    }
+
+    #[test]
+    fn strict_preset_strips_emoji_and_smart_quotes() {
+        let r = sanitize("\u{201C}hi\u{201D} 🌍 there", &Options::strict());
+        // Smart quotes -> ascii ", emoji removed.
+        assert_eq!(r, "\"hi\" there");
     }
 
     #[test]
