@@ -16,5 +16,5 @@ name = "textsanity_native"
 crate-type = ["cdylib"]
 
 [dependencies]
-textsanity-core = { path = "../textsanity-core", version = "0.1.0" }
+textsanity-core = { path = "../textsanity-core", version = "0.1.1" }
 pyo3 = { version = "0.23", features = ["abi3-py310", "extension-module"] }

@@ -46,6 +46,18 @@ def test_strip_emoji() -> None:
     assert sanitize("hi \U0001f30d world \U0001f680", o) == "hi world"
 
 
+def test_strip_emoji_flags() -> None:
+    o = Options(strip_emoji=True)
+    # Flags are regional indicator pairs (US, then JP).
+    assert sanitize("hi \U0001f1fa\U0001f1f8 there \U0001f1ef\U0001f1f5", o) == "hi there"
+
+
+def test_strip_emoji_keycap() -> None:
+    o = Options(strip_emoji=True)
+    # "1" + variation selector + combining enclosing keycap.
+    assert sanitize("press 1️⃣ now", o) == "press 1 now"
+
+
 def test_options_immutable() -> None:
     import contextlib
 

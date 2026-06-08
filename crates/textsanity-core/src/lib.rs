@@ -238,7 +238,8 @@ fn is_emoji_codepoint(c: char) -> bool {
     let cp = c as u32;
     matches!(
         cp,
-        0x1F300..=0x1F5FF   // miscellaneous symbols and pictographs
+        0x1F1E6..=0x1F1FF   // regional indicator symbols (flag emoji)
+        | 0x1F300..=0x1F5FF  // miscellaneous symbols and pictographs
         | 0x1F600..=0x1F64F  // emoticons
         | 0x1F680..=0x1F6FF  // transport and map symbols
         | 0x1F700..=0x1F77F
@@ -249,6 +250,7 @@ fn is_emoji_codepoint(c: char) -> bool {
         | 0x1FA70..=0x1FAFF
         | 0x2600..=0x26FF    // miscellaneous symbols
         | 0x2700..=0x27BF    // dingbats
+        | 0x20E3             // combining enclosing keycap (e.g. 1️⃣)
         | 0xFE0E..=0xFE0F    // variation selectors
     )
 }
@@ -402,6 +404,29 @@ mod tests {
         };
         let r = sanitize("hi 🌍 world 🚀", &opts);
         assert_eq!(r, "hi world");
+    }
+
+    #[test]
+    fn strip_emoji_flags() {
+        let opts = Options {
+            strip_emoji: true,
+            ..Options::default()
+        };
+        // Flags are pairs of regional indicator symbols (U+1F1E6..=U+1F1FF).
+        let r = sanitize("hi 🇺🇸 there 🇯🇵", &opts);
+        assert_eq!(r, "hi there");
+    }
+
+    #[test]
+    fn strip_emoji_keycap_leaves_no_combining_remnant() {
+        let opts = Options {
+            strip_emoji: true,
+            ..Options::default()
+        };
+        // Keycap "1️⃣" = '1' + U+FE0F + U+20E3. The combining enclosing
+        // keycap must go too, otherwise a stray mark is left behind.
+        let r = sanitize("press 1\u{FE0F}\u{20E3} now", &opts);
+        assert_eq!(r, "press 1 now");
     }
 
     #[test]
